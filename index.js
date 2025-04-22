@@ -1,46 +1,108 @@
-function handleFormSubmit(event){
-    event.preventDefault();
-    const user={
-        username: event.target.username.value,
-        email:event.target.email.value,
-        phone:event.target.phone.value
+
+  // When the page get load display all expenses
+document.addEventListener("DOMContentLoaded", display);
+
+  
+    // add new expnnse in expenseList array
+    function handleFormSubmit(event) {  
+ event.preventDefault();
+    const expenseData = {
+        id: Date.now(), 
+        expenceAmount: event.target.expenceAmount.value,
+        description: event.target.description.value,
+        category: event.target.category.value,
+
+    };
+
+    const editId=sessionStorage.getItem('editId');
+    if(editId){
+        expenseData.id=Number(editId);
+        editData(editId,expenseData) 
+    }else{
+        addData(expenseData);
     }
-    const users=JSON.parse(localStorage.getItem("users"))|| [];
-    let isUniqueEmail=true;
-    users.forEach((eachUser)=>{
-        if(eachUser.email=== user.email){
-            isUniqueEmail=false;
-            alert("this email is already Listed!!");
+ 
+  
+    display();
+    }
+
+    // use this function to display expenses on screen
+    function display() {
+     const expenseList = document.querySelector('ul');
+     expenseList.innerHTML = '';
+
+     const expenseData = JSON.parse(localStorage.getItem('expenseList')) || [];
+      console.log(expenseData);
+     for (let i = 0; i < expenseData.length; i++) {
+         const li = document.createElement('li');
+         li.innerHTML = `${expenseData[i].expenceAmount}, ${expenseData[i].description}, ${expenseData[i].category} `;
+          li.setAttribute('id',expenseData[i].id);
+         const deleteBtn = document.createElement('button');
+         deleteBtn.textContent = 'Delete Expense';
+         deleteBtn.className='btn btn-danger p-1 mx-1'
+         deleteBtn.addEventListener('click', function () {
+             deleteData(expenseData[i].id, li);
+         });
+         const editBtn = document.createElement('button');
+         editBtn.textContent = 'Edit Expense';
+         editBtn.className='btn btn-warning p-1 mx-1'
+         editBtn.addEventListener('click', function () {
+            
+            sessionStorage.setItem('editId', expenseData[i].id);
+            document.getElementById('expenseAmount').value = expenseData[i].expenceAmount;
+            document.getElementById('description').value = expenseData[i].description;
+            document.getElementById('category').value = expenseData[i].category;
+            const btn = document.querySelector('form button[type="submit"]');
+            btn.textContent='update Expense';
+        });
+         li.appendChild(deleteBtn);
+         li.appendChild(editBtn);
+         expenseList.appendChild(li);
+     }
+    }
+
+    // this function to add expense details into local storage
+    function addData(expenseData) {
+        let expenseList = JSON.parse(localStorage.getItem('expenseList')) || [];
+
+        expenseList.push(expenseData);
+        localStorage.setItem('expenseList', JSON.stringify(expenseList));
+    }
+
+
+    // this function to delete the expense details from local store and DOM (screen)
+    function deleteData(expenseId, liElement) {
+        const expenseData = JSON.parse(localStorage.getItem('expenseList')) || [];
+        const updatedExpenseData= [];
+    
+        for (let i = 0; i < expenseData.length; i++) {
+            if (expenseData[i].id !== expenseId) {
+                updatedExpenseData.push(expenseData[i]);
+            }
         }
-    })
-    if(isUniqueEmail){
-        users.push(user);
-        localStorage.setItem("users",JSON.stringify(users));
-        displayUsers();
-        event.target.reset();
-        event.target.username.focus();
+    
+        localStorage.setItem('expenseList', JSON.stringify(updatedExpenseData));
+        liElement.remove();
+     }
+    
+
+    // use this function to update expense details from local storage
+    function editData(editId,updatedExpenseData) {
+        const expenseList = JSON.parse(localStorage.getItem('expenseList')) || [];
+  const index = expenseList.findIndex(expense => expense.id === Number(editId));
+
+  if (index !== -1) {
+    console.log(updatedExpenseData)
+    expenseList[index] = { ...expenseList[index], ...updatedExpenseData };
+    localStorage.setItem('expenseList', JSON.stringify(expenseList));
+    
+    document.getElementById('expenseAmount').value ='';
+    document.getElementById('description').value ='';
+    document.getElementById('category').value ='';
+    const btn = document.querySelector('form button[type="submit"]');
+    btn.textContent='Add Expense';
+    sessionStorage.removeItem('editId')
+    
     }
-}
-function displayUsers(){
-    const userLists=document.querySelector('ul');
-    userLists.innerHTML='';
-    const users=JSON.parse(localStorage.getItem("users"))|| [];
-    users.forEach((user)=>{
-        const li=document.createElement('li');
-        li.innerHTML=`${user.username} ${user.email} ${user.phone} `;
-        const button=document.createElement('button');
-        button.textContent='Delete';
-        button.addEventListener('click',function(){
-            deleteUsers(user.email);
-        })
-        li.appendChild(button);
-        userLists.appendChild(li);
-    })
-}
-function deleteUsers(email){
-const users=JSON.parse(localStorage.getItem("users"))|| [];
-const filteredUsers=users.filter((user)=>user.email!== email);
-localStorage.setItem("users",JSON.stringify(filteredUsers));
-displayUsers();
-}
-window.addEventListener('DOMContentLoaded',displayUsers);
+    }
+   
